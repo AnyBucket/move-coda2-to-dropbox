@@ -1,0 +1,94 @@
+# *** IMPORTANT ***
+#
+# IF YOU HAVE RUN THIS SCRIPT ON YOUR FIRST MAC ALREADY, SET THE FIRST_RUN VARIABLE BELOW TO FALSE!
+#
+# IF YOU DON'T, THE EXISTING CONFIGURATION IN DROPBOX WILL BE OVERWRITTEN!
+#
+# *** IMPORTANT ***
+
+first_run=TRUE
+
+# set the source and destination directories
+prefs_source=~/Library/Preferences
+dest=~/Dropbox/Apps
+
+# check to see if the top-level apps directory exists
+# if not, create it
+if [[ ! -d $dest ]]; then
+	mkdir $dest
+fi
+
+# check to see if the Coda 2 folder already exists
+# if not, create it
+# this is unlikely to be true if you've never run this script before ...
+if [[ ! -d $dest/Coda\ 2 ]]; then
+	mkdir $dest/Coda\ 2
+	mkdir $dest/Coda\ 2/Config
+	mkdir $dest/Coda\ 2/Prefs
+fi
+
+if [ $first_run == TRUE ]; then
+
+	# this is the first time the script has been run, according to the first_run variable above
+	# since this is the case, the existing preferences and configuration will be moved to Dropbox
+
+	# check to see if the Coda 2 preferences files exist
+	# if they do, move them to the new location
+	# if they don't exist, Coda 2 may not be installed
+	if [[ -f $prefs_source/com.panic.Coda2.plist ]]; then
+		mv -f $prefs_source/com.panic.Coda2.plist $dest/Coda\ 2/Prefs
+	else
+		echo "$prefs_source/com.panic.Coda2.plist file does not exist - has Coda 2 been installed and run at least once?  This script will now exit."
+		exit
+	fi
+
+	if [[ -f $prefs_source/com.panic.Coda2.LSSharedFileList.plist ]]; then
+		mv -f $prefs_source/com.panic.Coda2.LSSharedFileList.plist $dest/Coda\ 2/Prefs
+	else
+		echo "$prefs_source/com.panic.Coda2.LSSharedFileList.plist file does not exist - has Coda 2 been installed and run at least once?  This script will now exit."
+		exit
+	fi
+
+	# if the script has reached this far, Coda 2 is installed and has been run at least once
+	# we can now safely move the Coda 2 configuration to the new Dropbox location
+	mv -f ~/Library/Application\ Support/Coda\ 2/* $dest/Coda\ 2/Config
+	rm -Rf ~/Library/Application\ Support/Coda\ 2/
+
+else
+
+	# this is NOT the first time the script has been run, according to the first_run variable above
+	# since this is the case, any existing Coda 2 configuration files will NOT be moved to Dropbox
+	# the existing local configuration will be DELETED as it is assumed at this point that you want to use
+	# the Dropbox configuration and preferences
+
+	rm -Rf ~/Library/Application\ Support/Coda\ 2
+	rm -f $prefs_source/com.panic.Coda2.LSSharedFileList.plist
+	rm -f $prefs_source/com.panic.Coda2.plist
+
+fi
+
+# at this point in the script there should be no local Coda 2 configuration or preferences left
+# they've either been moved to Dropbox (i.e. $first_run=TRUE) or they've been deleted (i.e. $first_run=FALSE)
+# we can now carry on and create the symbolic links
+
+# create the symbolic link for the Coda 2 configuration folder
+ln -s $dest/Coda\ 2/Config ~/Library/Application\ Support/Coda\ 2
+
+# create the symbolic link for the Coda 2 recent items list
+ln -s $dest/Coda\ 2/Prefs/com.panic.Coda2.LSSharedFileList.plist $prefs_source/com.panic.Coda2.LSSharedFileList.plist
+
+# create the symbolic link for the Coda 2 user preferences
+ln -s $dest/Coda\ 2/Prefs/com.panic.Coda2.plist $prefs_source/com.panic.Coda2.plist
+
+echo ""
+echo 'You should not need to run this script on this Mac again'
+echo 'unless you need to recreate the symbolic links.'
+echo 'Note that if you change your Coda 2 settings on a Mac'
+echo 'that has not had this script run on it and you then'
+echo 'want to use THAT configuration, set the first_run variable'
+echo 'at the top of this script to true and run it on the Mac'
+echo 'that contains the configuration you want to use.  Any'
+echo 'existing Coda 2 configuration and preferences stored in'
+echo 'Dropbox will be overwritten.'
+echo ""
+echo 'Done!'
